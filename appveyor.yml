@@ -19,21 +19,27 @@ environment:
     - PYTHON: "C:\\Miniconda"
       PYTHON_VERSION: "2.7"
       PYTHON_ARCH: "32"
+      TEST_PYTHON: "C:\\Python27"
     - PYTHON: "C:\\Miniconda-x64"
       PYTHON_VERSION: "2.7"
       PYTHON_ARCH: "64"
+      TEST_PYTHON: "C:\\Python27-x64"
     - PYTHON: "C:\\Miniconda35"
       PYTHON_VERSION: "3.5"
       PYTHON_ARCH: "32"
+      TEST_PYTHON: "C:\\Python35"
     - PYTHON: "C:\\Miniconda35-x64"
       PYTHON_VERSION: "3.5"
       PYTHON_ARCH: "64"
+      TEST_PYTHON: "C:\\Python35-x64"
     - PYTHON: "C:\\Miniconda36"
       PYTHON_VERSION: "3.6"
       PYTHON_ARCH: "32"
+      TEST_PYTHON: "C:\\Python36"
     - PYTHON: "C:\\Miniconda36-x64"
       PYTHON_VERSION: "3.6"
       PYTHON_ARCH: "64"
+      TEST_PYTHON: "C:\\Python36-x64"
 
 # We always use a 64-bit machine, but can build x86 distributions
 # with the TARGET_ARCH variable.
@@ -50,6 +56,7 @@ install:
     # Install miniconda and fix headers
     - ps: .\\multibuild\\ci\\appveyor\\install.ps1
     - ps: .\\multibuild\\ci\\appveyor\\missing-headers.ps1
+    - SET SAVED_PATH=%PATH%
     - SET PATH=%PYTHON%;%PYTHON%\Scripts;%PYTHON%\Library\bin;%PATH%
     - conda info
 
@@ -72,9 +79,10 @@ build_script:
     - "%CMD_IN_ENV% python setup.py bdist_wheel"
 
 test_script:
-    # create test env
-    - conda create --yes -n test_env python=%PYTHON_VERSION% %TEST_DEPENDS%
-    - activate test_env
+    # create test env. Do not use miniconda.
+    - SET PATH=%TEST_PYTHON%;%TEST_PYTHON%\Scripts;%SAVED_PATH%
+    - SET PATH=%TEST_PYTHON%\Library\bin;%PATH%
+    - pip install %TEST_DEPENDS%
 
     # install from wheel
     - pip install --no-index --find-links dist/ %PACKAGE_NAME%
