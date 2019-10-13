@@ -2,90 +2,138 @@ environment:
   global:
     REPO_DIR: pytables
     PACKAGE_NAME: tables
-    BUILD_COMMIT: v3.5.2   # Remember to update this for every new PyTables release!
-    BUILDWHEEL: "True"  # trigger setup.py to include zlib.dll
-    BUILD_DEPENDS: "hdf5 numpy>=1.9.3 numexpr>=2.6.2 six cython bzip2"
-    TEST_DEPENDS: "numpy>=1.9.3 numexpr>=2.6.2 six>=1.9.0 mock"
+    BUILD_COMMIT: 05c963a8b6caef28704d12a945449fa0874fd18c  # Remember to update this for every new PyTables release!
     DISABLE_AVX2: "True"  # do not include AVX2 in this build
-    HDF5_VERSION: 1.10.4
+    HDF5_VERSION: 1.10.5
+    HDF5_USE_PREFIX: "True"  # prefix hdf5.dll -> pytables_hdf5.dll
+    APPVEYOR_SAVE_CACHE_ON_ERROR: true
+    VENV_BUILD_DIR: "venv_build"
+    VENV_TEST_DIR: "venv_test"
     WHEELHOUSE_UPLOADER_USERNAME: travis-worker
     WHEELHOUSE_UPLOADER_SECRET:
         secure:
             9s0gdDGnNnTt7hvyNpn0/ZzOMGPdwPp2SewFTfGzYk7uI+rdAN9rFq2D1gAP4NQh
 
   matrix:
-    - PYTHON: "C:\\Miniconda"
-      PYTHON_VERSION: "2.7"
-      PYTHON_ARCH: "32"
-    - PYTHON: "C:\\Miniconda-x64"
-      PYTHON_VERSION: "2.7"
-      PYTHON_ARCH: "64"
-    - PYTHON: "C:\\Miniconda35"
-      PYTHON_VERSION: "3.5"
-      PYTHON_ARCH: "32"
-    - PYTHON: "C:\\Miniconda35-x64"
-      PYTHON_VERSION: "3.5"
-      PYTHON_ARCH: "64"
-    - PYTHON: "C:\\Miniconda36"
-      PYTHON_VERSION: "3.6"
-      PYTHON_ARCH: "32"
-    - PYTHON: "C:\\Miniconda36-x64"
-      PYTHON_VERSION: "3.6"
-      PYTHON_ARCH: "64"
-    - PYTHON: "C:\\Miniconda37"
-      PYTHON_VERSION: "3.7"
-      PYTHON_ARCH: "32"
-    - PYTHON: "C:\\Miniconda37-x64"
-      PYTHON_VERSION: "3.7"
-      PYTHON_ARCH: "64"
+    - PYTHON: C:\Python36
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      PYTHON_VERSION: 3.6
+      PYTHON_ARCH: 32
+      HDF5_VSVERSION: "14"
+      MINIMUM_NUMPY_VERSION: "1.12.1"
+
+    - PYTHON: C:\Python36-x64
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      PYTHON_VERSION: 3.6
+      PYTHON_ARCH: 64
+      HDF5_VSVERSION: "14-64"
+      MINIMUM_NUMPY_VERSION: "1.12.1"
+
+    - PYTHON: C:\Python37
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      PYTHON_VERSION: 3.7
+      PYTHON_ARCH: 32
+      HDF5_VSVERSION: "15"
+      MINIMUM_NUMPY_VERSION: "1.14.6"
+
+    - PYTHON: C:\Python37-x64
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      PYTHON_VERSION: 3.7
+      PYTHON_ARCH: 64
+      HDF5_VSVERSION: "16-64"
+      MINIMUM_NUMPY_VERSION: "1.14.6"
+
+    #- PYTHON: C:\Python38rc1
+    #  PYTHON_VERSION: 3.8
+    #  PYTHON_ARCH: 32
+    #  HDF5_VSVERSION: "15-64"
+
+    #- PYTHON: C:\Python38rc1-x64
+    #  PYTHON_VERSION: 3.8
+    #  PYTHON_ARCH: 64
+    #  HDF5_VSVERSION: "15-64"
+
 
 # We always use a 64-bit machine, but can build x86 distributions
 # with the PYTHON_ARCH variable.
 platform:
-    - x64
+  - x64
 
 matrix:
-    fast_finish: true
+  fast_finish: true
 
 install:
-    # Fetch submodules
-    - git submodule update --init --recursive
+  - cmd: echo "Filesystem root:"
+  - dir C:\
 
-    - SET PATH=%PYTHON%;%PYTHON%\Scripts;%PYTHON%\Library\bin;%PATH%
-    - conda info
+  - echo "Installed SDKs:"
+  - dir "C:/Program Files/Microsoft SDKs/Windows"
 
-    # Check that we have the expected version and architecture for Python
-    - python --version
-    - python -c "import struct; print(struct.calcsize('P') * 8)"
+  # Get needed submodules
+  - git submodule update --init
+
+  # Install new Python if necessary
+  - ps: .\multibuild\install_python.ps1
+
+  # Prepend required Python to the PATH of this build (this cannot be
+  # done from inside the powershell script as it would require to restart
+  # the parent CMD process).
+  - SET PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
+
+  # Check that we have the expected version and architecture for Python
+  - python --version
+  - python -c "import sys,platform,struct;print(sys.platform, platform.machine(), struct.calcsize('P') * 8, )"
 
 build_script:
-    # Install build requirements
-    - conda create --yes -n build_env python=%PYTHON_VERSION% %BUILD_DEPENDS%
-    - activate build_env
+  # Create build virtualenv
+  - "python -m venv %VENV_BUILD_DIR%"
+  - "%VENV_BUILD_DIR%\\Scripts\\activate.bat"
 
-    # Additional pre install steps:
-    - set HDF5_DIR=%CONDA_PREFIX%\Library\
-    - set BZIP2_DIR=%CONDA_PREFIX%\Library\
-    - set LIBRARY_PATH=%HDF5_DIR%\lib
+  # Upgrade to the latest pip, setuptools, and wheel.
+  - python -m pip install -U pip setuptools wheel
 
-    # build wheel:
-    - cd %REPO_DIR%
-    - git checkout %BUILD_COMMIT%
-    - python setup.py bdist_wheel
+  # Install build requirements.
+  - python -m pip install cython
+  - python -m pip install numpy==%MINIMUM_NUMPY_VERSION%
+
+  # Build HDF5 (or get from cache)
+  - set HDF5_DIR=C:\\hdf5\\%HDF5_VERSION%\\%HDF5_VSVERSION%
+  - set PATH=%PATH%;%HDF5_DIR%\bin
+  - python -m pip install requests
+  - python get_hdf5.py
+
+  # build wheel:
+  - cd %REPO_DIR%
+  - git checkout %BUILD_COMMIT%
+  - python setup.py bdist_wheel
+  - cd ..
+
+  # deactivate build venv
+  - "%VENV_BUILD_DIR%\\Scripts\\deactivate.bat"
 
 test_script:
-    # create test env
-    - conda create --yes -n test_env python=%PYTHON_VERSION% %TEST_DEPENDS%
-    - activate test_env
+  # Create test virtualenv
+  - "python -m venv %VENV_TEST_DIR%"
+  - "%VENV_TEST_DIR%\\Scripts\\activate.bat"
+  - python -m pip install -U numpy numexpr
 
-    # install from wheel
-    - pip install --no-index --find-links dist/ %PACKAGE_NAME%
+  # install from wheel
+  - python -m pip install --no-index --find-links %REPO_DIR%/dist/ %PACKAGE_NAME%
 
-    - cd ..
-    - python -m tables.tests.test_all
+  - python -m tables.tests.test_all
+
+  # deactivate test venv
+  - "%VENV_BUILD_DIR%\\Scripts\\deactivate.bat"
 
 artifacts:
-    - path: "%REPO_DIR%\\dist\\*"
+  - path: "%REPO_DIR%\\dist\\*"
+  - path: "C:\\hdf5\\%HDF5_VERSION%\\%HDF5_VSVERSION%"
+    name: hdf5lib
+    type: zip
+
+cache:
+  - "%LOCALAPPDATA%\\pip\\Cache"
+  - "C:\\hdf5"
 
 on_success:
   # Upload the generated wheel package to Rackspace
