@@ -98,6 +98,8 @@ build_script:
   - set PATH=%PATH%;%HDF5_DIR%\bin
   - python -m pip install requests
   - python get_hdf5.py
+  # copy hdf5 tree for creating artifact (debugging)
+  - xcopy /e C:\\hdf5 hdf5\
 
   # build wheel:
   - cd %REPO_DIR%
@@ -117,8 +119,7 @@ test_script:
   # install from wheel
   - python -m pip install --no-index --find-links %REPO_DIR%/dist/ %PACKAGE_NAME%
 
-  - xcopy /e C:\\hdf5 hdf5\
-  #- python -m tables.tests.test_all
+  - python -m tables.tests.test_all
 
   # deactivate test venv
   - "%VENV_BUILD_DIR%\\Scripts\\deactivate.bat"
