@@ -120,14 +120,15 @@ test_script:
   # install from wheel
   - python -m pip install --no-index --find-links %REPO_DIR%/dist/ %PACKAGE_NAME%
 
-  - python -m tables.tests.test_all
+  - xcopy /e C:\\hdf5 hdf5\
+  #- python -m tables.tests.test_all
 
   # deactivate test venv
   - "%VENV_BUILD_DIR%\\Scripts\\deactivate.bat"
 
 artifacts:
   - path: "%REPO_DIR%\\dist\\*"
-  - path: "C:\\hdf5\\%HDF5_VERSION%\\%HDF5_VSVERSION%"
+  - path: "hdf5\\%HDF5_VERSION%\\%HDF5_VSVERSION%"
     name: hdf5lib
     type: zip
 
