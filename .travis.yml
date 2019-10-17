@@ -71,6 +71,17 @@ matrix:
         - PLAT=i686
         - NP_BUILD_DEP="1.14.5"
         - NP_TEST_DEP="1.14.5"
+    - os: linux
+      env:
+        - MB_PYTHON_VERSION=3.8
+        - NP_BUILD_DEP="1.17.2"
+        - NP_TEST_DEP="1.17.2"
+    - os: linux
+      env:
+        - MB_PYTHON_VERSION=3.8
+        - PLAT=i686
+        - NP_BUILD_DEP="1.17.2"
+        - NP_TEST_DEP="1.17.2"
     - os: osx
       language: generic
       env:
@@ -93,6 +104,12 @@ matrix:
         - MB_PYTHON_VERSION=3.7
         - NP_BUILD_DEP="1.14.5"
         - NP_TEST_DEP="1.14.5"
+    - os: osx
+      language: generic
+      env:
+        - MB_PYTHON_VERSION=3.7
+        - NP_BUILD_DEP="1.17.2"
+        - NP_TEST_DEP="1.17.2"
 
 before_install:
     # See:
