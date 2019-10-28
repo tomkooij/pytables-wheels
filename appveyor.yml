@@ -44,6 +44,10 @@ build_script:
     - conda create --yes -n build_env python=%PYTHON_VERSION% %BUILD_DEPENDS%
     - activate build_env
 
+    # FIXME upgrade Cython (only needed for python 3.5, remove me)
+    - cython --version
+    - pip install -U cython
+
     # Additional pre install steps:
     - set HDF5_DIR=%CONDA_PREFIX%\Library\
     - set BZIP2_DIR=%CONDA_PREFIX%\Library\
