@@ -95,6 +95,7 @@ build_script:
 
   # Build HDF5 (or get from cache)
   - set HDF5_DIR=C:\\hdf5\\%HDF5_VERSION%\\%HDF5_VSVERSION%
+  - set HDF5_EXT_ZLIB=zlib.lib
   - set PATH=%PATH%;%HDF5_DIR%\bin
   - python -m pip install requests
   - python get_hdf5.py
