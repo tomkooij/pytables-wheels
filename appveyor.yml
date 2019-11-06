@@ -15,20 +15,6 @@ environment:
             9s0gdDGnNnTt7hvyNpn0/ZzOMGPdwPp2SewFTfGzYk7uI+rdAN9rFq2D1gAP4NQh
 
   matrix:
-    - PYTHON: C:\Python36
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-      PYTHON_VERSION: 3.6
-      PYTHON_ARCH: 32
-      HDF5_VSVERSION: "14"
-      MINIMUM_NUMPY_VERSION: "1.12.1"
-
-    - PYTHON: C:\Python36-x64
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-      PYTHON_VERSION: 3.6
-      PYTHON_ARCH: 64
-      HDF5_VSVERSION: "14-64"
-      MINIMUM_NUMPY_VERSION: "1.12.1"
-
     - PYTHON: C:\Python37
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       PYTHON_VERSION: 3.7
